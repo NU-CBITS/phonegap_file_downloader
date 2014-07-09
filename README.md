@@ -11,13 +11,15 @@ Key dependencies:
 
 
 Installation process:
+1. Run
+`bower install phonegap-file-downloader`
 
-1. Install necessary Cordova plugins if you haven't done so already. In your project directory, run from the command line:
+2. Install necessary Cordova plugins if you haven't done so already. In your project directory, run from the command line:
 
 `cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git`
 `cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git`
 
-2. Add `<access origin="*" />` to your config.xml file.
+3. Add `<access origin="*" />` to your config.xml file.
 
 
 Usage:
