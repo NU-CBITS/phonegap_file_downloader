@@ -11,6 +11,7 @@ Key dependencies:
 
 
 Installation process:
+
 1. Run
 `bower install phonegap-file-downloader`
 
