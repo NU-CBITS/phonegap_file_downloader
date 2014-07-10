@@ -75,7 +75,7 @@ Downloader.prototype = {
         }, 500);
     },
 
-    findTags: function(fileType,content) {
+    findInstances: function(fileType,content) {
         // global variable for use with insert function
         elements = [];
 
@@ -94,7 +94,7 @@ Downloader.prototype = {
         elemNums = [], elemNew = [];
         for (i = 0; i < elements.length; i++) {
             // access local storage if files have already been downloaded
-            if (typeof localStorage.fp === 'undefined' || localStorage.l10n === 'undefined') {
+            if (typeof localStorage.fp === 'undefined') {
                 alert("Please download the most recent content.");
                 return content;
             }
