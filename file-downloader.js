@@ -5,6 +5,13 @@ var app = {
 
 function filetransfer(download_link,fp) {
     var fileTransfer = new FileTransfer();
+
+
+    if (typeof FileTransfer === 'undefined') {
+        alert("File transfer plug in is missing. Downloads may not be complete.");
+        return;
+    }
+    
     fileTransfer.download(
         download_link,
         fp,
@@ -96,6 +103,9 @@ Downloader.prototype = {
             // access local storage if files have already been downloaded
             if (typeof localStorage.fp === 'undefined') {
                 alert("Please download the most recent content.");
+                return content;
+            }
+            else if (elements[0] === "null") {
                 return content;
             }
             else {
