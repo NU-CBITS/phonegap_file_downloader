@@ -1,6 +1,6 @@
 {
   "name": "phonegap_file_downloader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "authors": [
     "Jeanie Chung <jeanie.chung@gmail.com>"
   ],
@@ -11,7 +11,9 @@
     "**/.*",
     "node_modules",
     "bower_components",
-    "test",
-    "tests"
+    "tests",
+    "cordova.js",
+    "FileTransfer.js"
+
   ]
 }
