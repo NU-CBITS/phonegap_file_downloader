@@ -79,9 +79,14 @@ Downloader.prototype = {
         }, 500);
     },
 
+    insert: function(fileType,content) {
+        var thingsToReplace = findInstances(fileType,content);
+        replaceInstances(fileType,content,thingsToReplace);
+    },
+
     findInstances: function(fileType,content) {
         // global variable for use with insert function
-        elements = [];
+        var elements = [];
 
         // currently supported file types: video, audio and should appear with the file type and id numbers following
         // e.g. video1, audio2, video52, audio12, etc.
@@ -94,7 +99,8 @@ Downloader.prototype = {
 
     },
 
-    insert: function(fileType,content) {
+    replaceInstances: function(fileType,content,instances) {
+        var elements = instances;
         elemNums = [], elemNew = [];
         for (i = 0; i < elements.length; i++) {
             // access local storage if files have already been downloaded
