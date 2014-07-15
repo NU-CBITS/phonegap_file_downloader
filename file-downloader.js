@@ -1,38 +1,24 @@
-var app = {
-    failureTally: 0,
-    rootdir: ''
+var Downloader = function Downloader() {
+    this.className = "Downloader";
 };
 
-function filetransfer(download_link,fp) {
-    var fileTransfer = new FileTransfer();
-
-
-    if (typeof FileTransfer === 'undefined') {
-        alert("File transfer plug in is missing. Downloads may not be complete.");
-        return;
-    }
-    
-    fileTransfer.download(
-        download_link,
-        fp,
-        function(entry) {
-            console.log("download complete: " + entry.fullPath);
-        },
-        function(error) {
-            console.log("download error source " + error.source);
-            app.failureTally++;
-            console.log(app.failureTally);
-        }
-    );
-}
-
-var Downloader = function Downloader() {
-    this.download_links = [
+var downloaderGlobal = {
+    completionTally: 0,
+    failureTally: 0,
+    rootdir: '',
+    textDownloadComplete: '',
+    textDownloading: '',
+    textDownloadingError: '',
+    textDownloadButton: '',
+    textMissingPlugin: '',
+    textMissingContent: '',
+    textUnavailableMedia: '',
+    textUnsupportedFileType: '',
+    download_links: [
         "http://techslides.com/demos/sample-videos/small.mp4",
         "http://techslides.com/demos/sample-videos/small.mp4",
         "http://techslides.com/demos/sample-videos/small.mp4"
-    ];
-    this.className = "Downloader";
+    ]
 };
 
 Downloader.prototype = {
@@ -41,7 +27,7 @@ Downloader.prototype = {
         document.addEventListener('deviceready', function() {
         window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fileSystemSuccess, fileSystemFail);
         function fileSystemSuccess(fileSystem) {
-            app.rootdir = fileSystem.root.toURL();
+            downloaderGlobal.rootdir = fileSystem.root.toURL();
         }
         function fileSystemFail(evt) {
             //Unable to access file system
@@ -54,31 +40,42 @@ Downloader.prototype = {
         return "test";
     },
 
+    setDownloadLinks: function(links) {
+        if (links instanceof Array) {
+            downloaderGlobal.download_links = links;
+        }
+        else {
+            downloaderGlobal.download_links = links;
+        }
+        alert(downloaderGlobal.download_links);
+
+    },
+
     download: function() {
         // the order that these links are listed is the order that corresponds to the content.
         // e.g. the first link in this array will correspond to the string 'video01' in the content.
         var dl = new Downloader();
-        var download_links = dl.download_links;
-        var numDownloads = download_links.length;
+        var dl_links = dl.download_links;
+        var numDownloads = dl_links.length;
         fp = [];
         for (var i = 0; i < numDownloads; i++) {
-            ext = download_links[i].substr(download_links[i].lastIndexOf('.') + 1);
+            ext = dl_links[i].substr(dl_links[i].lastIndexOf('.') + 1);
 
-            fp.push(app.rootdir + "downloaded_video" + i + "." + ext); // file path and name
+            fp.push(downloaderGlobal.rootdir + "downloaded_video" + i + "." + ext); // file path and name
             localStorage.setItem('fp',JSON.stringify(fp));
 
             // call file transfer function
-            filetransfer(download_links[i], fp[i]);
+            filetransfer(dl_links[i], fp[i]);
         }
 
         setTimeout(function() {
-            if (app.failureTally === 0) {
+            if (downloaderGlobal.failureTally === 0) {
                 alert("Download Complete!");
             }
             else {
                 alert("Something went wrong with the download and people have been notified.");
             }
-            app.failureTally = 0;
+            downloaderGlobal.failureTally = 0;
         }, 500);
     },
 
@@ -138,4 +135,78 @@ Downloader.prototype = {
         }
         return content;
     }
+};
+
+function constructProgressBar (ftObject) {
+    // Where you want a progress bar, add the following markup:
+    //  <div id="progressContainer" style="display: none;">
+    //  </div>
+    // and the following CSS
+    // div.progress {
+    //     opacity: 1;
+    //     transition: opacity 1s;
+    // }
+    // div.progress.fade {
+    //     display: none;
+    // }
+
+    var progressContainer = document.getElementById('progressContainer');
+        progressContainer.setAttribute("style","display: block"); 
+    var progress = document.createElement("div");
+        progress.setAttribute("class","progress");
+        progressContainer.appendChild(progress);
+    var progressbar = document.createElement("div");
+        progressbar.setAttribute("class","progress-bar progress-bar-striped");
+        progressbar.setAttribute("aria-valuemin","0");
+        progressbar.setAttribute("aria-valuemax","100");
+        progressbar.setAttribute("role","progressbar");
+        progress.appendChild(progressbar);
+
+    ftObject.onprogress = function(progressEvent) {
+        
+        if (progressEvent.lengthComputable) {
+            var perc = Math.floor(progressEvent.loaded / progressEvent.total * 100);
+            progressbar.setAttribute("style","width: "+perc+"%");
+            progressbar.setAttribute("aria-valuenow",perc);
+
+            if (perc === 100) {
+                setTimeout(function() {
+                    progress.setAttribute("class","progress fade");
+                }, 500);
+            }
+        }
+    };
 }
+
+function filetransfer(file,filepath) {
+    var fileTransfer = new FileTransfer();
+    downloaderGlobal.completionTally = 0;
+
+    if (typeof FileTransfer === 'undefined') {
+        alert("File transfer plug in is missing. Downloads may not be complete.");
+        return;
+    }
+
+    constructProgressBar(fileTransfer);
+    
+    fileTransfer.download(
+        file,
+        filepath,
+        function(entry) {
+            // var dl = new Downloader();
+            console.log("download complete: " + entry.fullPath);
+            downloaderGlobal.completionTally++;
+            if (downloaderGlobal.completionTally === downloaderGlobal.download_links.length) {
+                alert("Download Complete!");
+            }
+        },
+        function(error) {
+            console.log("download error source " + error.source);
+            downloaderGlobal.failureTally++;
+            console.log(downloaderGlobal.failureTally);
+        }
+    );
+}
+
+
+

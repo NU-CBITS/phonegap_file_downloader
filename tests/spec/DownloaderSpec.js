@@ -50,5 +50,17 @@ describe("Downloader", function() {
     expect(alert).toHaveBeenCalledWith('Please download the most recent content.');
   });
 
+  it("should set the correct download links", function() {
+    newLinks = [
+            "https://github.com/cbitstech/conemo_videos/blob/master/LM1.mp4?raw=true",
+            "https://github.com/cbitstech/conemo_videos/blob/master/LM2.mp4?raw=true",
+            "https://github.com/cbitstech/conemo_videos/blob/master/LM3.mp4?raw=true",
+            "https://github.com/cbitstech/conemo_videos/blob/master/LM4.mp4?raw=true"
+    ];
+    downloader.setDownloadLinks(newLinks);
+
+    expect(alert).toHaveBeenCalledWith(newLinks);
+  });
+
 
 });
