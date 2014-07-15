@@ -6,14 +6,16 @@ var downloaderGlobal = {
     completionTally: 0,
     failureTally: 0,
     rootdir: '',
-    textDownloadComplete: '',
-    textDownloading: '',
-    textDownloadingError: '',
-    textDownloadButton: '',
-    textMissingPlugin: '',
-    textMissingContent: '',
-    textUnavailableMedia: '',
-    textUnsupportedFileType: '',
+    textDownloadComplete: 'Download Complete!',
+    textDownloading: 'Downloading',
+    textFile: 'file',
+    textFiles: 'files',
+    textDownloadingError: 'Something went wrong with the download and a report has been sent.',
+    textDownloadButton: 'Download',
+    textMissingPlugin: 'File transfer plug in is missing. Downloads may not be complete.',
+    textMissingContent: 'Please download the most recent content.',
+    textUnavailableMedia: '<p>This media is unavailable.</p>',
+    textUnsupportedFileType: 'That file type is not currently supported.',
     download_links: [
         "http://techslides.com/demos/sample-videos/small.mp4",
         "http://techslides.com/demos/sample-videos/small.mp4",
@@ -50,13 +52,35 @@ Downloader.prototype = {
         alert(downloaderGlobal.download_links);
 
     },
+    downloadSingle: function(url,folder) {
+        fpSingle = '';
+        ext = url.substr(url.lastIndexOf('.') + 1);
+        fileName = url.substr(url.lastIndexOf('/') + 1);
+        fileName = fileName.split('.')[0];
+        if (folder) {
+            fpSingle = downloaderGlobal.rootdir + folder + fileName + "1" + "." + ext; // file path and name
+        }
+        else {
+            fpSingle = downloaderGlobal.rootdir + fileName + "." + ext; // file path and name
+        }
+        localStorage.setItem('fpSingle',fpSingle);
 
-    download: function() {
+        // call file transfer function
+        filetransfer(url, fpSingle, 1);
+
+        setTimeout(function() {
+            if (downloaderGlobal.failureTally !== 0) {
+                alert(downloaderGlobal.textDownloadingError);
+            }
+            downloaderGlobal.failureTally = 0;
+        }, 500);
+    },
+    downloadMultiple: function() {
         // the order that these links are listed is the order that corresponds to the content.
         // e.g. the first link in this array will correspond to the string 'video01' in the content.
-        var dl = new Downloader();
-        var dl_links = dl.download_links;
+        var dl_links = downloaderGlobal.download_links;
         var numDownloads = dl_links.length;
+
         fp = [];
         for (var i = 0; i < numDownloads; i++) {
             ext = dl_links[i].substr(dl_links[i].lastIndexOf('.') + 1);
@@ -65,27 +89,18 @@ Downloader.prototype = {
             localStorage.setItem('fp',JSON.stringify(fp));
 
             // call file transfer function
-            filetransfer(dl_links[i], fp[i]);
+            filetransfer(dl_links[i], fp[i], numDownloads);
         }
 
         setTimeout(function() {
-            if (downloaderGlobal.failureTally === 0) {
-                alert("Download Complete!");
-            }
-            else {
-                alert("Something went wrong with the download and people have been notified.");
+            if (downloaderGlobal.failureTally !== 0) {
+                alert(downloaderGlobal.textDownloadingError);
             }
             downloaderGlobal.failureTally = 0;
         }, 500);
     },
 
-    insert: function(fileType,content) {
-        var thingsToReplace = findInstances(fileType,content);
-        replaceInstances(fileType,content,thingsToReplace);
-    },
-
-    findInstances: function(fileType,content) {
-        // global variable for use with insert function
+    findElements: function(fileType,content) {
         var elements = [];
 
         // currently supported file types: video, audio and should appear with the file type and id numbers following
@@ -99,13 +114,13 @@ Downloader.prototype = {
 
     },
 
-    replaceInstances: function(fileType,content,instances) {
-        var elements = instances;
-        elemNums = [], elemNew = [];
+    replaceElements: function(fileType,content,elements) {
+        var elemNums = [];
+        var elemNew = [];
         for (i = 0; i < elements.length; i++) {
             // access local storage if files have already been downloaded
             if (typeof localStorage.fp === 'undefined') {
-                alert("Please download the most recent content.");
+                alert(downloaderGlobal.textMissingContent);
                 return content;
             }
             else if (elements[0] === "null") {
@@ -128,7 +143,7 @@ Downloader.prototype = {
                     elemTag = "<audio controls style='max-width:100%;'><source type='audio/mpeg' src='"+fileSrc+"'/></audio>";
                 }
                 else {
-                    alert("That file type is not currently supported.");
+                    alert(downloaderGlobal.textUnsupportedFileType);
                     return content;
                 }
             elemNew.push(elemTag);
@@ -136,14 +151,22 @@ Downloader.prototype = {
                 content = content.replace(elements[i],elemNew[i]);
             }
             else {
-                content = content.replace(elements[i],"<p>This video is unavailable.</p>");
+                content = content.replace(elements[i],downloaderGlobal.textUnavailableMedia);
             }
         }
         return content;
-    }
+    },
+
+    insert: function(fileType,content) {
+        var dl = new Downloader();
+        thingsToReplace = dl.findElements(fileType,content);
+        content = dl.replaceElements(fileType,content,thingsToReplace);
+
+        return content;
+    },
 };
 
-function constructProgressBar (ftObject) {
+function constructProgressBar (ftObject, numDownloads) {
     // Where you want a progress bar, add the following markup:
     //  <div id="progressContainer" style="display: none;">
     //  </div>
@@ -155,6 +178,8 @@ function constructProgressBar (ftObject) {
     // div.progress.fade {
     //     display: none;
     // }
+
+    document.getElementById("download-counter").innerHTML = downloaderGlobal.textDownloading + " " +numDownloads+ " " + downloaderGlobal.textFiles + "...";
 
     var progressContainer = document.getElementById('progressContainer');
         progressContainer.setAttribute("style","display: block"); 
@@ -178,32 +203,43 @@ function constructProgressBar (ftObject) {
             if (perc === 100) {
                 setTimeout(function() {
                     progress.setAttribute("class","progress fade");
-                }, 500);
+
+                    var numDownloadsRemaining = numDownloads - downloaderGlobal.completionTally;
+
+                    if (numDownloads > 1) {
+                        document.getElementById("download-counter").innerHTML = downloaderGlobal.textDownloading + " "+numDownloadsRemaining+" "+downloaderGlobal.textFiles + "...";
+                    }
+                    else if (numDownloadsRemaining === 1) {
+                        document.getElementById("download-counter").innerHTML = downloaderGlobal.textDownloading + " 1 " + downloaderGlobal.textFile + "...";
+                    }
+                    else {
+                        progressContainer.setAttribute("style","display: none");
+                    }
+                }, 1000);
             }
         }
     };
 }
 
-function filetransfer(file,filepath) {
+function filetransfer(file,filepath,numFiles) {
     var fileTransfer = new FileTransfer();
     downloaderGlobal.completionTally = 0;
+    constructProgressBar(fileTransfer,numFiles);
 
     if (typeof FileTransfer === 'undefined') {
-        alert("File transfer plug in is missing. Downloads may not be complete.");
+        alert(downloaderGlobal.textMissingPlugin);
         return;
     }
-
-    constructProgressBar(fileTransfer);
     
     fileTransfer.download(
         file,
         filepath,
         function(entry) {
-            // var dl = new Downloader();
             console.log("download complete: " + entry.fullPath);
             downloaderGlobal.completionTally++;
-            if (downloaderGlobal.completionTally === downloaderGlobal.download_links.length) {
-                alert("Download Complete!");
+
+            if (downloaderGlobal.completionTally === numFiles) {
+                alert(downloaderGlobal.textDownloadComplete);
             }
         },
         function(error) {
@@ -213,6 +249,5 @@ function filetransfer(file,filepath) {
         }
     );
 }
-
 
 
