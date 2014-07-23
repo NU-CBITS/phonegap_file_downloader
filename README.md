@@ -16,9 +16,11 @@ Installation process:
 `bower install phonegap-file-downloader`
 
 2. Install necessary Cordova plugins if you haven't done so already. In your project directory, run from the command line:
+```
+cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git
 
-`cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git`
-`cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git`
+cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git
+```
 
 3. Add `<access origin="*" />` to your config.xml file.
 
@@ -52,9 +54,10 @@ This will replace any static content of [filetype][numberId] with your chosen do
 
 For example
 ```
+var downloader = new Downloader();
 sampleText = "lorem ipsum video0 lorem lorem video 01 lorem video1";
 
-files.insert('video',sampleText);
+downloader.insert('video',sampleText);
 ```
 
 will result in video0 playing the "funny" video and video1 and video01 playing the "mediocre" video.
@@ -99,5 +102,14 @@ div.progress.fade {
 	display: none;
 }
 ```
+
+Error Messages
+--------------
+
+FileTransfer is not defined:
+Make sure that the cordova.js file is included in the head
+`<script src="cordova.js"></script>`
+
+
 
 
