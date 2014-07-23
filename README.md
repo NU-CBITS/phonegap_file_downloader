@@ -57,7 +57,7 @@ For example
 var downloader = new Downloader();
 sampleText = "lorem ipsum video0 lorem lorem video 01 lorem video1";
 
-downloader.insert('video',sampleText);
+sampleText = downloader.insert('video',sampleText);
 ```
 
 will result in video0 playing the "funny" video and video1 and video01 playing the "mediocre" video.
