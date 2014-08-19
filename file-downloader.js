@@ -17,8 +17,6 @@ var downloaderGlobal = {
     textUnavailableMedia: '<p>This media is unavailable.</p>',
     textUnsupportedFileType: 'That file type is not currently supported.',
     download_links: [
-        "http://techslides.com/demos/sample-videos/small.mp4",
-        "http://techslides.com/demos/sample-videos/small.mp4",
         "http://techslides.com/demos/sample-videos/small.mp4"
     ]
 };
@@ -53,9 +51,9 @@ Downloader.prototype = {
 
     },
     downloadSingle: function(url,folder) {
-        fpSingle = '';
-        ext = url.substr(url.lastIndexOf('.') + 1);
-        fileName = url.substr(url.lastIndexOf('/') + 1);
+        var fpSingle = '';
+        var ext = url.substr(url.lastIndexOf('.') + 1);
+        var fileName = url.substr(url.lastIndexOf('/') + 1);
         fileName = fileName.split('.')[0];
         if (folder) {
             fpSingle = downloaderGlobal.rootdir + folder + fileName + "1" + "." + ext; // file path and name
@@ -80,12 +78,12 @@ Downloader.prototype = {
         // e.g. the first link in this array will correspond to the string 'video01' in the content.
         var dl_links = downloaderGlobal.download_links;
         var numDownloads = dl_links.length;
-
         fp = [];
         for (var i = 0; i < numDownloads; i++) {
-            ext = dl_links[i].substr(dl_links[i].lastIndexOf('.') + 1);
-
-            fp.push(downloaderGlobal.rootdir + "downloaded_video" + i + "." + ext); // file path and name
+            var fileName = dl_links[i].substr(dl_links[i].lastIndexOf('/') + 1);
+            fileName = fileName.split('.')[0];
+            var ext = dl_links[i].substr(dl_links[i].lastIndexOf('.') + 1);
+            fp.push(downloaderGlobal.rootdir + fileName + "." + ext); // file path and name
             localStorage.setItem('fp',JSON.stringify(fp));
 
             // call file transfer function
@@ -99,13 +97,12 @@ Downloader.prototype = {
             downloaderGlobal.failureTally = 0;
         }, 500);
     },
-
     findElements: function(fileType,content) {
         var elements = [];
 
-        // currently supported file types: video, audio and should appear with the file type and id numbers following
-        // e.g. video1, audio2, video52, audio12, etc.
-        var reg = new RegExp(fileType+"[0-9]{1,2}","g");
+        // currently supported file types: video, audio
+        // should follow the format of "video_small.mp4"
+        var reg = new RegExp(fileType+"_(.*)","g");
         var found = String(content.match(reg));
 
         elements.push(found);
@@ -113,10 +110,11 @@ Downloader.prototype = {
         return elements;
 
     },
-
     replaceElements: function(fileType,content,elements) {
-        var elemNums = [];
+        var elemFileNames = [];
         var elemNew = [];
+
+        console.log("elements: "+elements);
         for (i = 0; i < elements.length; i++) {
             // access local storage if files have already been downloaded
             if (typeof localStorage.fp === 'undefined') {
@@ -130,12 +128,13 @@ Downloader.prototype = {
                 fp = JSON.parse(localStorage.fp);
             }
             // create an array of the ID numbers
-            var elemId = new RegExp(fileType+"(.*)");
-            elemNums.push(elements[i].match(elemId)[1]);
+            var elemFileName = new RegExp(fileType+"_(.*)");
 
+            elemFileNames.push(elements[i].match(elemFileName)[1]);
             // create the corresponding video tag, referencing the index number of the file path array
             var elemTag;
-            var fileSrc = fp[parseFloat(elemNums[i])];
+            var fileIndex = fp.indexOf(elemFileNames[i]);
+            var fileSrc = fp[fileIndex];
                 if (fileType === "video") {
                     elemTag = "<video controls style='max-width:100%;'><source type='video/mp4' src='"+fileSrc+"'/></video>";
                 }
@@ -163,7 +162,7 @@ Downloader.prototype = {
         content = dl.replaceElements(fileType,content,thingsToReplace);
 
         return content;
-    },
+    }
 };
 
 function constructProgressBar (ftObject, numDownloads) {
@@ -249,5 +248,3 @@ function filetransfer(file,filepath,numFiles) {
         }
     );
 }
-
-
