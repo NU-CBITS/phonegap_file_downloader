@@ -2,7 +2,7 @@ var Downloader = function Downloader() {
     this.className = "Downloader";
     this.config = {
         completionTally: 0,
-        failureTally: 0,
+        failures: [],
         rootdir: '',
         textDownloadComplete: 'Download Complete!',
         textDownloading: 'Downloading',
@@ -69,10 +69,10 @@ Downloader.prototype = {
         this.filetransfer(url, fpSingle, 1);
         var self = this;
         setTimeout(function() {
-            if (self.config.failureTally !== 0) {
+            if (self.config.failures.length > 0) {
                 alert(self.config.textDownloadingError);
             }
-            self.config.failureTally = 0;
+            self.config.failures = [];
         }, 500);
     },
     downloadMultiple: function() {
@@ -93,10 +93,10 @@ Downloader.prototype = {
         }
         var self = this;
         setTimeout(function() {
-            if (self.config.failureTally !== 0) {
+            if (self.config.failures.length > 0) {
                 alert(self.config.textDownloadingError);
             }
-            self.config.failureTally = 0;
+            self.config.failures = [];
         }, 500);
     },
     findElements: function(fileType,content) {
@@ -180,9 +180,6 @@ Downloader.prototype = {
                         else if (numDownloadsRemaining === 1) {
                             downloadContainer.innerHTML = self.config.textDownloading + " 1 " + self.config.textFile + "...";
                         }
-                        else {
-                            progressContainer.setAttribute("style","display: none");
-                        }
                     }, 1000);
                 }
             }
@@ -251,8 +248,8 @@ Downloader.prototype = {
             },
             function(error) {
                 console.log("download error source " + error.source);
-                self.config.failureTally++;
-                console.log(self.config.failureTally);
+                self.config.failures.push(file);
+                console.log("failure count: " + self.config.failures.length);
             }
         );
     }
