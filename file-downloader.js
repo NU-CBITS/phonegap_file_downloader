@@ -1,7 +1,7 @@
 var Downloader = function Downloader() {
     this.className = "Downloader";
     this.config = {
-        completionTally: 0,
+        completions: [],
         failures: [],
         rootdir: '',
         textDownloadComplete: 'Download Complete!',
@@ -80,6 +80,12 @@ Downloader.prototype = {
         // e.g. the first link in this array will correspond to the string 'video01' in the content.
         var dl_links = this.config.download_links;
         var numDownloads = dl_links.length;
+        var downloadContainer = document.getElementById(this.config.downloadCounterId);
+
+        downloadContainer.innerHTML = "Downloading " + numDownloads + " files...";
+        this.config.failures = [];
+        this.config.completions = [];
+
         fp = [];
         for (var i = 0; i < numDownloads; i++) {
             var fileName = dl_links[i].substr(dl_links[i].lastIndexOf('/') + 1);
@@ -162,28 +168,34 @@ Downloader.prototype = {
 
         return content;
     },
-    constructDownloadCounter: function(ftObject,numDownloads) {
-        var self = this;
-        var downloadContainer = document.getElementById(self.config.downloadCounterId).innerHTML = self.config.textDownloading + " " +numDownloads+ " " + self.config.textFiles + "...";
-        console.log(downloadContainer);
-        ftObject.onprogress = function(progressEvent) {
-            
-            if (progressEvent.lengthComputable) {
-                var perc = Math.floor(progressEvent.loaded / progressEvent.total * 100);
-                if (perc === 100) {
-                    setTimeout(function() {
-                        var numDownloadsRemaining = numDownloads - self.config.completionTally;
+    constructDownloadCounter: function(ftObject, numDownloads) {
+      /*var self = this;
+      var downloadContainer = document.getElementById(self.config.downloadCounterId);
 
-                        if (numDownloads > 1) {
-                            downloadContainer.innerHTML = self.config.textDownloading + " "+numDownloadsRemaining+" "+self.config.textFiles + "...";
-                        }
-                        else if (numDownloadsRemaining === 1) {
-                            downloadContainer.innerHTML = self.config.textDownloading + " 1 " + self.config.textFile + "...";
-                        }
-                    }, 1000);
+      downloadContainer.innerHTML = self.config.textDownloading + " " + numDownloads + " " + self.config.textFiles + "...";
+      console.log(downloadContainer.innerHTML);*/
+      /*ftObject.onprogress = function(progressEvent) {
+        if (progressEvent.lengthComputable) {
+          var perc = Math.floor(progressEvent.loaded / progressEvent.total * 100);
+
+          if (perc === 100) {
+            setTimeout(function() {
+              var numDownloadsRemaining = numDownloads - self.config.completions.length;
+
+              if (numDownloadsRemaining > self.config.failures.length) {
+                if (numDownloads > 1) {
+                  downloadContainer.innerHTML = self.config.textDownloading + " "+numDownloadsRemaining+" "+self.config.textFiles + "...";
                 }
-            }
-        };
+                else if (numDownloadsRemaining === 1) {
+                  downloadContainer.innerHTML = self.config.textDownloading + " 1 " + self.config.textFile + "...";
+                }
+              } else if (self.config.failures.length > 0) {
+                downloadContainer.innerHTML = "" + self.config.failures.length + " " + self.config.textFiles + " failed to download, please try again";
+              }
+            }, 1000);
+          }
+        }
+      };*/
     },
 
     constructProgressBar: function(ftObject, numDownloads) {
@@ -223,7 +235,6 @@ Downloader.prototype = {
     filetransfer: function(file,filepath,numFiles) {
         var fileTransfer = new FileTransfer();
         var self = this;
-        self.config.completionTally = 0;
         if (self.config.downloadCounter === true) {
             self.constructDownloadCounter(fileTransfer,numFiles);
         }
@@ -234,23 +245,51 @@ Downloader.prototype = {
             alert(self.config.textMissingPlugin);
             return;
         }
-        
-        fileTransfer.download(
-            file,
-            filepath,
-            function(entry) {
-                console.log("download complete: " + entry.fullPath);
-                self.config.completionTally++;
+        console.log("downloading: " + file);
 
-                if (self.config.completionTally === numFiles) {
-                    alert(self.config.textDownloadComplete);
-                }
-            },
-            function(error) {
-                console.log("download error source " + error.source);
-                self.config.failures.push(file);
-                console.log("failure count: " + self.config.failures.length);
+        function reportStatus() {
+          var downloadContainer = document.getElementById(self.config.downloadCounterId);
+
+          if (self.config.failures.length > 0 &&
+              numFiles - self.config.completions.length === self.config.failures.length) {
+            downloadContainer.innerHTML = "" + self.config.failures.length + " files had errors, please retry.";
+          } else {
+            downloadContainer.innerHTML = "files: " +
+                                          (numFiles - self.config.completions.length) +
+                                          " remaining, " +
+                                          self.config.failures.length +
+                                          " had errors";
+          }
+        }
+        
+        // only download if the file isn't found
+        window.resolveLocalFileSystemURL(filepath, function() {
+            self.config.completions.push(file);
+            reportStatus();
+
+            if (self.config.completions.length === self.config.download_links) {
+              document.getElementById(self.config.downloadCounterId).innerHTML = "Complete!";
             }
-        );
+          }, function() {
+          fileTransfer.download(
+              file,
+              filepath,
+              function(entry) {
+                  self.config.completions.push(file);
+                  reportStatus();
+                  console.log("" + self.config.completions.length + " download complete: " + entry.fullPath);
+
+                  if (self.config.completions.length === numFiles) {
+                      alert(self.config.textDownloadComplete);
+                  }
+              },
+              function(error) {
+                  console.log("download error source " + error.source);
+                  self.config.failures.push(file);
+                  reportStatus();
+                  console.log("failure count: " + self.config.failures.length);
+              }
+          );
+        });
     }
 };
